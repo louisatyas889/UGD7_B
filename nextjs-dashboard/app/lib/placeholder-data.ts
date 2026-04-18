@@ -121,3 +121,8 @@ export const fleetPersonnel = [
     assignedVessel: "V-902 AQUILA"
   }
 ];
+
+// Di placeholder-data.ts
+export const customers = []; 
+export const invoices = [];
+export const revenue = [];
