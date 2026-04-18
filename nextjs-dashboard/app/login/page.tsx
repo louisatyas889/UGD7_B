@@ -1,7 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { dummyUsers, dummyAdmins } from "../lib/placeholder-data";
+import { users, dummyAdmins } from "../lib/placeholder-data";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -37,7 +37,7 @@ export default function LoginPage() {
       );
 
       // Cek apakah kredensial cocok dengan data USER biasa
-      const isValidUser = dummyUsers.find(
+      const isValidUser = users.find(
         (user: any) => user.id === id && user.key === key
       );
 

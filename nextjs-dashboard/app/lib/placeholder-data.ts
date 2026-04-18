@@ -1,4 +1,4 @@
-export const dummyUsers = [
+export const users = [
   {
     id: "Louisa-2909",
     key: "2909",
