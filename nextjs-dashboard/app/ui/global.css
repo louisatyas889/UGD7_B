@@ -2,24 +2,37 @@
 @tailwind components;
 @tailwind utilities;
 
-input[type='number'] {
-  -moz-appearance: textfield;
-  appearance: textfield;
+:root {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 2, 6, 23; /* Warna #020617 */
+  --background-end-rgb: 3, 7, 18;   /* Warna #030712 */
 }
 
-input[type='number']::-webkit-inner-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+@layer base {
+  body {
+    @apply bg-[#020617] text-white antialiased;
+    font-family: var(--font-inter), ui-sans-serif, system-ui;
+  }
+
+  h1, h2, h3, h4, .font-space {
+    font-family: var(--font-space), ui-sans-serif, system-ui;
+  }
 }
 
-input[type='number']::-webkit-outer-spin-button {
-  -webkit-appearance: none;
-  margin: 0;
+/* Scrollbar Custom agar terlihat lebih futuristik */
+::-webkit-scrollbar {
+  width: 8px;
 }
 
-@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&family=Share+Tech+Mono&family=Barlow:wght@400;600;700&display=swap');
+::-webkit-scrollbar-track {
+  background: #020617;
+}
 
-/* Opsional: Tambahkan efek glow tipis pada teks ungu */
-.logo-text {
-  text-shadow: 0 0 10px rgba(168, 85, 247, 0.3);
+::-webkit-scrollbar-thumb {
+  background: #1e1b4b;
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3730a3;
 }

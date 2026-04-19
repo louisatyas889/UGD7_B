@@ -126,3 +126,11 @@ export const fleetPersonnel = [
 export const customers = []; 
 export const invoices = [];
 export const revenue = [];
+
+// Tambahkan koordinat ke data packages yang sudah ada
+export const TrakingPackages = [
+  { id: "PKG-100293", size: "MEDIUM", dest: "Japan (HND)", lat: 35.6762, lng: 139.6503, vesselName: "V-992 BUMI" },
+  { id: "PKG-100412", size: "MEDIUM", dest: "Germany (FRA)", lat: 50.1109, lng: 8.6821, vesselName: "V-771 ORION" },
+  { id: "PKG-200112", size: "SMALL", dest: "Korea (ICN)", lat: 37.5665, lng: 126.9780, vesselName: "V-441 BULAN" },
+  { id: "PKG-300441", size: "LARGE", dest: "Australia (SYD)", lat: -33.8688, lng: 151.2093, vesselName: "V-303 SATURN" },
+];
