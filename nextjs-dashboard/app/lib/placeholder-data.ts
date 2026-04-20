@@ -133,4 +133,4 @@ export const TrakingPackages = [
   { id: "PKG-100412", size: "MEDIUM", dest: "Germany (FRA)", lat: 50.1109, lng: 8.6821, vesselName: "V-771 ORION" },
   { id: "PKG-200112", size: "SMALL", dest: "Korea (ICN)", lat: 37.5665, lng: 126.9780, vesselName: "V-441 BULAN" },
   { id: "PKG-300441", size: "LARGE", dest: "Australia (SYD)", lat: -33.8688, lng: 151.2093, vesselName: "V-303 SATURN" },
-];
+];                                                                                                                                            
