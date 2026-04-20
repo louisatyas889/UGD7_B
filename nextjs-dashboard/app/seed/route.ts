@@ -113,3 +113,26 @@ export async function GET() {
   }
 }
 
+// Tambahkan fungsi ini di file seed kamu
+async function seedTelemetry() {
+  await sql`
+    CREATE TABLE IF NOT EXISTS telemetry (
+      id SERIAL PRIMARY KEY,
+      active_vessels INTEGER NOT NULL,
+      total_distance VARCHAR(255) NOT NULL,
+      signal VARCHAR(100) NOT NULL,
+      weather_status VARCHAR(100) NOT NULL
+    );
+  `;
+
+  // Data ini diambil dari objek telemetry di placeholder-data
+  const insertedTelemetry = await sql`
+    INSERT INTO telemetry (active_vessels, total_distance, signal, weather_status)
+    VALUES (124, '84,202 NM', 'STABLE-LN4', 'OPTIMAL')
+    ON CONFLICT DO NOTHING;
+  `;
+  
+  return insertedTelemetry;
+}
+
+// Jangan lupa panggil seedTelemetry() di fungsi GET utama

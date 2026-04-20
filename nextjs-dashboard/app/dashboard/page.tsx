@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import PrimeTopbar from "../ui/PrimeTopbar";
-import { vessels, alerts, fuel, telemetry } from "../lib/placeholder-data";
+import { fetchVessels, fetchAlerts, fetchFuel, fetchTelemetry } from '@/app/lib/data';
 
 function MonIcon({t}:{t:string}) {
   if(t==="chart") return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
@@ -14,13 +14,39 @@ export default function DashboardPage() {
   const [utc, setUtc] = useState("");
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
+  
+  // State untuk menampung data dari Database
+  const [vesselsData, setVesselsData] = useState<any[]>([]);
+  const [alertsData, setAlertsData] = useState<any[]>([]);
+  const [fuelData, setFuelData] = useState<any[]>([]);
+  const [telemetryData, setTelemetryData] = useState<any>(null); // State baru untuk telemetry
+
+  // Mengambil data dari Database saat pertama kali render
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        const [v, a, f, t] = await Promise.all([
+          fetchVessels(),
+          fetchAlerts(),
+          fetchFuel(),
+          fetchTelemetry() // Memanggil fungsi fetchTelemetry
+        ]);
+        setVesselsData(v);
+        setAlertsData(a);
+        setFuelData(f);
+        setTelemetryData(t);
+      } catch (err) {
+        console.error("Gagal load data database:", err);
+      }
+    };
+    loadData();
+  }, []);
 
   useEffect(() => {
     const t = () => { const n=new Date(); setUtc(`${String(n.getUTCHours()).padStart(2,"0")}:${String(n.getUTCMinutes()).padStart(2,"0")}:${String(n.getUTCSeconds()).padStart(2,"0")} UTC`); };
     t(); const id=setInterval(t,1000); return ()=>clearInterval(id);
   }, []);
 
-  // Inisialisasi Leaflet di dalam Map Kecil
   useEffect(() => {
     if (typeof window === "undefined" || leafletMap.current) return;
 
@@ -44,7 +70,6 @@ export default function DashboardPage() {
 
       L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png").addTo(map);
 
-      // Tambahkan marker kecil yang berdenyut (Pulse)
       const pulseIcon = L.divIcon({
         className: 'map-pulse-icon',
         html: `<div style="width:8px; height:8px; background:#22d3ee; border-radius:50%; box-shadow:0 0 10px #22d3ee; animation: blink 1.5s infinite"></div>`,
@@ -89,7 +114,6 @@ export default function DashboardPage() {
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
         .eta{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.05em}
         
-        /* Map Section Perbaikan */
         .map-panel{flex:1;min-height:350px}
         .map-outer{display:flex;height:100%;min-height:350px}
         .map-wrap{position:relative; flex:1; background-color:#05050a; overflow: hidden;}
@@ -108,7 +132,6 @@ export default function DashboardPage() {
         .tk{font-family:'Share Tech Mono',monospace;font-size:9px;color:#6b7280}
         .tv{font-family:'Share Tech Mono',monospace;font-size:10px;color:#e5e7eb}
 
-        /* Fuel Section */
         .fuel-panel{flex:1; display:flex; flex-direction:column; min-height:200px}
         .fca{flex:1; padding:20px 14px; display:flex; flex-direction:column; justify-content:flex-end}
         .brow{display:flex; align-items:flex-end; gap:8px; height:100px; width:100%}
@@ -139,7 +162,7 @@ export default function DashboardPage() {
                 <tr><th>ID KAPAL</th><th>TUJUAN</th><th>STATUS</th><th>ETA</th><th>MONITORING</th></tr>
               </thead>
               <tbody>
-                {vessels.map(v=>(
+                {vesselsData.map(v=>(
                   <tr key={v.id}>
                     <td><span className="vid">{v.id}</span></td>
                     <td><span style={{fontSize:13,color:"#d1d5db",fontWeight:500}}>{v.dest}</span></td>
@@ -155,25 +178,21 @@ export default function DashboardPage() {
           <div className="panel map-panel">
             <div className="map-outer">
               <div className="map-wrap">
-                {/* DIV UNTUK LEAFLET MAP */}
                 <div id="map-container" ref={mapContainerRef} />
-
                 <div className="map-card">
                   <div className="map-card-label">▸ GLOBAL POSITIONING</div>
-                  <div className="map-card-count">{telemetry.activeVessels} VESSELS</div>
-                  <div className="map-card-sub">OP-DIST: {telemetry.totalDistance}</div>
+                  <div className="map-card-count">{telemetryData?.activeVessels || 0} VESSELS</div>
+                  <div className="map-card-sub">OP-DIST: {telemetryData?.totalDistance || '---'}</div>
                 </div>
-
                 <div className="map-ctrl-wrap">
                   <div className="mc" onClick={() => handleZoom("in")}>+</div>
                   <div className="mc" onClick={() => handleZoom("out")}>−</div>
                 </div>
               </div>
-
               <div className="map-tele">
                 <div className="tt">SATELLITE TELEMETRY</div>
-                <div className="tr"><span className="tk">LINK-ID</span><span className="tv">{telemetry.signal}</span></div>
-                <div className="tr"><span className="tk">ATMOS</span><span className="tv" style={{color:"#4ade80"}}>{telemetry.weatherStatus}</span></div>
+                <div className="tr"><span className="tk">LINK-ID</span><span className="tv">{telemetryData?.signal || '---'}</span></div>
+                <div className="tr"><span className="tk">ATMOS</span><span className="tv" style={{color:"#4ade80"}}>{telemetryData?.weatherStatus || '---'}</span></div>
                 <div className="tr"><span className="tk">SECTOR</span><span className="tv">NW-440</span></div>
               </div>
             </div>
@@ -183,7 +202,7 @@ export default function DashboardPage() {
         <div className="right-col">
           <div className="panel">
             <div className="ah"><div className="at">SYSTEM LOGS</div><div className="ald"/></div>
-            {alerts.map((a,i)=>(
+            {alertsData.map((a,i)=>(
               <div className="ac" key={i}>
                 <div className="act" style={{display:"flex", justifyContent:"space-between", marginBottom:4}}>
                   <span className="atype" style={{color:a.tc}}>{a.type}</span>
@@ -198,7 +217,7 @@ export default function DashboardPage() {
             <div className="ah"><div className="at" style={{color:"#a855f7"}}>ENERGY CORE</div></div>
             <div className="fca">
               <div className="brow">
-                {fuel.map((b,i)=>(
+                {fuelData.map((b,i)=>(
                   <div className="bc" key={i}>
                     <div 
                       className="bf" 
