@@ -9,7 +9,7 @@ import {
   TrakingPackages 
 } from '../lib/placeholder-data'; // Impor semua data dummy kamu di sini
 
-const sql = postgres(process.env.POSTGRES_URL, { ssl: 'require' });
+const sql = postgres(process.env.POSTGRES_URL!, { ssl: 'require' });
 
 // 1. Seed Users (Data Login)
 async function seedUsers() {
