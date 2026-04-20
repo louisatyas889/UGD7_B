@@ -17,6 +17,10 @@ export default function PrimeTopbar() {
     return () => document.removeEventListener("mousedown", h);
   }, []);
 
+  useEffect(() => {
+    setShowMore(false);
+  }, [path]);
+
   const navs = [
     { label: "DASHBOARD", href: "/dashboard" },
     { label: "FLEET", href: "/fleet" },
@@ -24,7 +28,14 @@ export default function PrimeTopbar() {
     { label: "ANALYTICS", href: "/analytics" },
   ];
 
+  const moreNavs = [
+    { label: "LIVE TRACKING MODE", href: "/admin/live-tracking" },
+    { label: "LOGISTICS OPTIMIZATION", href: "/admin/logistic-optimazation" },
+    { label: "VESSEL DEPLOYMENT", href: "/admin/vessel-deployement" },
+  ];
+
   const isActive = (href: string) => path === href;
+  const isMoreActive = moreNavs.some((item) => path === item.href);
 
   return (
     <div style={{
@@ -49,7 +60,7 @@ export default function PrimeTopbar() {
             textShadow: "0 0 10px rgba(168,85,247,0.4)" 
           }}
         >
-          PRIME LOG FLEET
+          SERENA SAIL
         </span>
         
         <nav style={{ display: "flex" }}>
@@ -79,7 +90,7 @@ export default function PrimeTopbar() {
             <button onClick={() => setShowMore(v => !v)} style={{
               fontFamily: "'Share Tech Mono', monospace", 
               fontSize: 11, 
-              color: showMore ? "#fff" : "#6b7280",
+              color: showMore || isMoreActive ? "#fff" : "#6b7280",
               padding: "0 16px", 
               cursor: "pointer", 
               border: "none", 
@@ -88,6 +99,7 @@ export default function PrimeTopbar() {
               display: "flex", 
               alignItems: "center",
               gap: 6,
+              borderBottom: isMoreActive ? "2px solid #a855f7" : "2px solid transparent",
             }}>
               MORE
               <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
@@ -102,23 +114,19 @@ export default function PrimeTopbar() {
                 borderRadius: 4, overflow: "hidden", minWidth: 220,
                 boxShadow: "0 10px 30px rgba(0,0,0,0.8)", zIndex: 300,
               }}>
-                {[
-                  { label: "LIVE TRACKING MODE", href: "/map" },
-                  { label: "LOGISTICS OPTIMIZATION", href: "/fleet" },
-                  { label: "VESSEL DEPLOYMENT", href: "/vessel-deployment" },
-                ].map(item => (
+                {moreNavs.map(item => (
                   <button 
                     key={item.label} 
                     onClick={() => { setShowMore(false); router.push(item.href); }}
                     style={{
                       display: "block", width: "100%", padding: "12px 16px", textAlign: "left",
                       fontFamily: "'Share Tech Mono', monospace", fontSize: 10,
-                      color: "#9ca3af", letterSpacing: "0.1em",
-                      background: "none", border: "none",
+                      color: path === item.href ? "#fff" : "#9ca3af", letterSpacing: "0.1em",
+                      background: path === item.href ? "rgba(168,85,247,0.1)" : "none", border: "none",
                       borderBottom: "1px solid rgba(255,255,255,0.05)", cursor: "pointer",
                     }}
                     onMouseEnter={e => { (e.target as HTMLElement).style.background = "rgba(168,85,247,0.1)"; (e.target as HTMLElement).style.color = "#fff"; }}
-                    onMouseLeave={e => { (e.target as HTMLElement).style.background = "none"; (e.target as HTMLElement).style.color = "#9ca3af"; }}
+                    onMouseLeave={e => { (e.target as HTMLElement).style.background = path === item.href ? "rgba(168,85,247,0.1)" : "none"; (e.target as HTMLElement).style.color = path === item.href ? "#fff" : "#9ca3af"; }}
                   >
                     {item.label}
                   </button>
