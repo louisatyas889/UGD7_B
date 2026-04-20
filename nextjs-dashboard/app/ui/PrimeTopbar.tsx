@@ -216,7 +216,7 @@ export default function PrimeTopbar() {
 
         {/* User Avatar (Kembali ke fungsi profil) */}
         <div
-          onClick={() => router.push("/profile")}
+        
           style={{
             width: 30, height: 30, borderRadius: "50%",
             background: "linear-gradient(135deg, #7c3aed, #22d3ee)",
