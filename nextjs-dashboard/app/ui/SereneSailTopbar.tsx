@@ -1,14 +1,17 @@
 "use client";
 import { useRouter, usePathname } from "next/navigation";
-// Import data dummy
-import { dummyAdmins } from "../lib/placeholder-data";
+
+// Data Admin Hardcoded
+const currentAdmin = {
+  id: "Louisa-Admin",
+  name: "Louisa",
+  role: "SYS-ADMIN",
+  avatar: "L"
+};
 
 export default function SereneSailTopbar() {
   const router = useRouter();
   const path = usePathname();
-
-  // Simulasi mengambil data admin yang sedang login (misal: Louisa)
-  const currentAdmin = dummyAdmins[0]; 
 
   const navs = [
     { label: "USER MANAGEMENT", href: "/admin/user-management" },
@@ -36,10 +39,10 @@ export default function SereneSailTopbar() {
       `}</style>
 
       <div style={{ display: "flex", alignItems: "center", gap: 50 }}>
-        {/* Logo Section */}
+        {/* Logo Section - Klik logo sekarang lari ke User Management */}
         <div 
           className="logo-text"
-          onClick={() => router.push("/admin/fleet-logistics")}
+          onClick={() => router.push("/admin/user-management")}
           style={{
             fontFamily: "'Orbitron', sans-serif", 
             fontSize: 16, fontWeight: 900,
@@ -75,7 +78,7 @@ export default function SereneSailTopbar() {
       {/* Action Icons Section */}
       <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
         
-        {/* Info Badge (Optional: Menunjukkan Role) */}
+        {/* Role Badge */}
         <div style={{
           fontFamily: "'Share Tech Mono', monospace", fontSize: 9,
           color: "#a855f7", background: "rgba(168, 85, 247, 0.1)",
@@ -84,7 +87,7 @@ export default function SereneSailTopbar() {
           {currentAdmin.role}
         </div>
 
-        {/* Notification Bell */}
+        {/* Notification Icon */}
         <div style={{ 
           display: "flex", alignItems: "center", justifyContent: "center", 
           width: 32, height: 32, cursor: "pointer", color: "#6b7280", 
@@ -100,7 +103,7 @@ export default function SereneSailTopbar() {
           </svg>
         </div>
 
-        {/* Logout Button */}
+        {/* Logout Icon */}
         <div 
           onClick={() => { if(confirm("TERMINATE ADMIN SESSION?")) router.push("/login"); }}
           title="Logout"
@@ -120,7 +123,7 @@ export default function SereneSailTopbar() {
           </svg>
         </div>
 
-        {/* User Profile Avatar (Menggunakan Initial dari Dummy Data) */}
+        {/* Profile Avatar */}
         <div
           title={`Logged in as ${currentAdmin.name}`}
           style={{

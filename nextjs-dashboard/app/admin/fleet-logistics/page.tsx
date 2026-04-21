@@ -1,79 +1,110 @@
 "use client";
-import { useState } from "react";
-import SereneSailTopbar from "../../ui/SereneSailTopbar";
-import { vessels4, packages, sizes } from "../../lib/placeholder-data";
+import { useState, useEffect } from "react";
+import SereneSailTopbar from "@/app/ui/SereneSailTopbar";
 
+// 1. Definisikan Tipe Data agar TypeScript tidak bingung
+interface Vessel {
+  id: string;
+  dest: string;
+  status: string;
+  status_color: string;
+  pct: number;
+}
+
+interface Tracking {
+  id: string;
+  size: string;
+  dest: string;
+}
+
+interface DashboardData {
+  vessels: Vessel[];
+  tracking: Tracking[];
+}
+
+// 2. Data Dummy untuk Fallback
+const fallbackData: DashboardData = {
+  vessels: [
+    { id: "PL-992-BUMI", dest: "Port of Rotterdam (NLD)", status: "EN ROUTE", status_color: "#22d3ee", pct: 85 },
+    { id: "PL-441-BULAN", dest: "Singapore Harbor (SGP)", status: "IN PORT", status_color: "#6b7280", pct: 100 },
+    { id: "PL-770-ORION", dest: "Suez Canal (EGY)", status: "DELAYED", status_color: "#f87171", pct: 35 }
+  ],
+  tracking: [
+    { id: "PKG-100293", size: "MEDIUM", dest: "Japan (HND)" },
+    { id: "PKG-100412", size: "MEDIUM", dest: "Germany (FRA)" },
+    { id: "PKG-200112", size: "SMALL", dest: "Korea (ICN)" }
+  ]
+};
 
 export default function FleetLogisticsPage() {
   const [activeSize, setActiveSize] = useState("MEDIUM");
+  
+  // 3. Inisialisasi State dengan Tipe yang Benar
+  const [data, setData] = useState<DashboardData>({
+    vessels: [],
+    tracking: [] 
+  });
+  const [loading, setLoading] = useState(true);
 
-  // Logika filter: hanya menampilkan paket yang sesuai dengan tab yang dipilih
-  const filteredPackages = packages.filter((p : any) => p.size === activeSize);
+  useEffect(() => {
+    let isMounted = true; 
+    
+    async function fetchAdminData() {
+      try {
+        const response = await fetch('/api/fleet-logistics'); 
+        const result = await response.json();
+        
+        if (isMounted) {
+          // Jika API mengembalikan data, pakai itu. Jika kosong/error, pakai fallback.
+          setData({
+            vessels: result.vessels?.length > 0 ? result.vessels : fallbackData.vessels,
+            tracking: result.tracking?.length > 0 ? result.tracking : fallbackData.tracking
+          });
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Fetch Error:", error);
+        if (isMounted) {
+          setData(fallbackData); // Pakai dummy jika koneksi gagal
+          setLoading(false);
+        }
+      }
+    }
+    fetchAdminData();
+    return () => { isMounted = false; };
+  }, []);
+
+  const sizes = ["SMALL", "MEDIUM", "LARGE"];
+  const filteredPackages = data.tracking.filter((p) => p.size === activeSize);
+
+  if (loading) return (
+    <div style={{ 
+      color: '#a855f7', padding: '20px', background: '#0a0a10', minHeight: '100vh',
+      fontFamily: "'Share Tech Mono', monospace", display: 'flex',
+      alignItems: 'center', justifyContent: 'center'
+    }}>
+      &gt; ACCESSING NEON DATABASE...
+    </div>
+  );
 
   return (
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@400;500;600;700&family=Orbitron:wght@400;600;700;900&display=swap');
-        
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html,body{background:#0a0a10;color:#e5e7eb;font-family:'Rajdhani',sans-serif;min-height:100vh; overflow: hidden;}
-
-        /* Header Section */
         .ph{padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.06)}
         .ph-title{display:flex;align-items:center;gap:14px;margin-bottom:4px}
         .ph-t{font-family:'Orbitron',sans-serif;font-size:18px;font-weight:700;color:#fff;letter-spacing:0.04em}
-        .live-badge{display:flex;align-items:center;gap:6px;font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:0.16em;padding:4px 10px;border:1px solid rgba(34,211,238,0.3);border-radius:3px;background:rgba(34,211,238,0.06)}
-        .ph-sub{font-family:'Rajdhani',sans-serif;font-size:13px;color:#6b7280}
-
-        /* Layout Grid */
-        .layout{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:0;height:calc(100vh - 165px)}
-        
-        /* Left Panel with Custom Scrollbar */
+        .layout{display:grid;grid-template-columns:1fr 1fr;gap:0;height:calc(100vh - 165px)}
         .left-panel{border-right:1px solid rgba(255,255,255,0.07); overflow-y: auto;}
-        .left-panel::-webkit-scrollbar { width: 4px; }
-        .left-panel::-webkit-scrollbar-thumb { background: rgba(168, 85, 247, 0.2); border-radius: 10px; }
-
-        .fl-title-row { padding: 14px 20px 6px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.03); }
-
-        /* Tables */
         table{width:100%;border-collapse:collapse}
-        th{font-family:'Share Tech Mono',monospace;font-size:7px;color:#4b5563;letter-spacing:0.2em;text-align:left;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.05);font-weight:400;text-transform:uppercase;background:rgba(255,255,255,0.01); position: sticky; top: 0; z-index: 10; background: #0a0a10;}
-        td{padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.04);vertical-align:middle}
-        tbody tr:hover{background:rgba(168,85,247,0.03); cursor: pointer;}
-
-        .vid3{font-family:'Share Tech Mono',monospace;font-size:10px;color:#a855f7;display:block}
-        .vsub{font-family:'Share Tech Mono',monospace;font-size:7px;color:#4b5563}
-
-        /* Progress Bar */
-        .prog-wrap{display:flex;align-items:center;gap:10px}
-        .prog-status{font-family:'Share Tech Mono',monospace;font-size:8px;color:#22d3ee;letter-spacing:0.1em;min-width:100px}
-        .prog-track{flex:1;height:4px;background:rgba(255,255,255,0.06);border-radius:2px;overflow:hidden;max-width:80px}
-        .prog-fill{height:100%;background:#a855f7;border-radius:2px;box-shadow:0 0 6px rgba(168,85,247,0.5)}
-        .prog-pct{font-family:'Share Tech Mono',monospace;font-size:9px;color:#6b7280;min-width:28px;text-align:right}
-
-        /* Right Panel Components */
-        .right-panel{display:flex;flex-direction:column; overflow-y: auto;}
-        .size-tabs{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid rgba(255,255,255,0.07)}
-        .stab{padding:12px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:9px;letter-spacing:0.14em;cursor:pointer;transition:all 0.2s;border:none;background:none;color:#6b7280}
+        th{font-family:'Share Tech Mono',monospace;font-size:7px;color:#4b5563;padding:12px 18px;text-align:left;text-transform:uppercase;position:sticky;top:0;background:#0a0a10;}
+        td{padding:12px 18px;border-bottom:1px solid rgba(255,255,255,0.04)}
+        .prog-fill{height:100%;background:#a855f7;box-shadow:0 0 6px rgba(168,85,247,0.5); transition: width 0.5s ease;}
+        .stab{padding:12px;text-align:center;font-family:'Share Tech Mono',monospace;font-size:9px;cursor:pointer;background:none;color:#6b7280;border:none}
         .stab.active{background:rgba(168,85,247,0.15); color:#a855f7; box-shadow: inset 0 -2px 0 #a855f7}
-
-        .pkg-header{display:flex;justify-content:space-between;align-items:center;padding:14px 20px 10px;border-bottom:1px solid rgba(255,255,255,0.06)}
-        .pkg-title{font-family:'Rajdhani',sans-serif;font-size:14px;font-weight:600;color:#fff}
-        .pkg-id{font-family:'Share Tech Mono',monospace;font-size:10px;color:#6b7280}
-        .size-badge{display:flex;align-items:center;gap:8px;font-family:'Share Tech Mono',monospace;font-size:9px;color:#a855f7}
-        .size-icon{width:8px;height:8px;border-radius:50%;background:#a855f7;box-shadow: 0 0 5px #a855f7}
-
-        .view-all{text-align:center;padding:12px;font-family:'Share Tech Mono',monospace;font-size:9px;color:#22d3ee;cursor:pointer;border-top:1px solid rgba(255,255,255,0.05);letter-spacing:0.14em}
-        
-        .health-section{padding:14px 20px;border-top:1px solid rgba(255,255,255,0.06);background:rgba(255,255,255,0.01); margin-top: auto;}
-        .health-title{font-family:'Share Tech Mono',monospace;font-size:8px;color:#6b7280;letter-spacing:0.2em;margin-bottom:10px}
-        .health-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-        .hk{font-family:'Rajdhani',sans-serif;font-size:12px;color:#9ca3af}
-        .hv{font-family:'Share Tech Mono',monospace;font-size:10px;color:#e5e7eb}
-
-        .footer-bar2{position:fixed;bottom:0;left:0;right:0;height:28px;background:#05050a;border-top:1px solid rgba(168,85,247,0.2);display:flex;align-items:center;gap:20px;padding:0 24px; z-index: 100;}
-        .fb2{font-family:'Share Tech Mono',monospace;font-size:8px;color:#4b5563;letter-spacing:0.14em}
-        .fb2 span{color:#a855f7}
+        .footer-bar2{position:fixed;bottom:0;width:100%;height:28px;background:#05050a;border-top:1px solid rgba(168,85,247,0.2);display:flex;align-items:center;padding:0 24px;}
       `}</style>
 
       <SereneSailTopbar />
@@ -81,44 +112,27 @@ export default function FleetLogisticsPage() {
       <div className="ph">
         <div className="ph-title">
           <div className="ph-t">OPERATIONS HUB</div>
-          <div className="live-badge" style={{ color: "#22d3ee" }}>LIVE TELEMETRY</div>
         </div>
-        <div className="ph-sub">Real-time oversight of global maritime assets and high-priority logistics segments.</div>
-      </div>
-
-      <div className="fl-title-row">
-        <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 10, color: "#a855f7", letterSpacing: "0.22em" }}>FLEET OVERVIEW</span>
-        <span style={{ fontFamily: "'Share Tech Mono',monospace", fontSize: 8, color: "#4b5563", letterSpacing: "0.14em" }}>ACTIVE VESSELS: {vessels4.length}</span>
       </div>
 
       <div className="layout">
-        {/* Panel Kiri: Daftar Kapal */}
         <div className="left-panel">
           <table>
             <thead>
-              <tr>
-                <th>VESSEL ID & NAME</th>
-                <th>DESTINATION</th>
-                <th>DELIVERY PROGRESS</th>
-              </tr>
+              <tr><th>VESSEL ID</th><th>DESTINATION</th><th>PROGRESS</th></tr>
             </thead>
             <tbody>
-              {vessels4.map((v : any, i : any) => (
-                <tr key={i}>
+              {data.vessels.map((v) => (
+                <tr key={v.id}>
+                  <td><span style={{color:'#a855f7', fontFamily:"'Share Tech Mono'"}}>{v.id}</span></td>
+                  <td style={{fontSize:'12px'}}>{v.dest}</td>
                   <td>
-                    <span className="vid3">{v.id}</span>
-                    <span className="vsub">{v.sub}</span>
-                  </td>
-                  <td>
-                    <span style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 12, color: "#d1d5db" }}>{v.dest}</span>
-                  </td>
-                  <td>
-                    <div className="prog-wrap">
-                      <span className="prog-status">{v.status}</span>
-                      <div className="prog-track">
+                    <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+                      <span style={{fontSize:'8px', color: v.status_color}}>{v.status}</span>
+                      <div style={{width:'80px', height:'4px', background:'rgba(255,255,255,0.06)'}}>
                         <div className="prog-fill" style={{ width: `${v.pct}%` }} />
                       </div>
-                      <span className="prog-pct">{v.pct}%</span>
+                      <span style={{fontSize:'9px'}}>{v.pct}%</span>
                     </div>
                   </td>
                 </tr>
@@ -127,67 +141,33 @@ export default function FleetLogisticsPage() {
           </table>
         </div>
 
-        {/* Panel Kanan: Paket & Health */}
-        <div className="right-panel">
-          <div className="size-tabs">
-            {sizes.map((s : any) => (
-              <button 
-                key={s} 
-                className={`stab ${activeSize === s ? "active" : ""}`} 
-                onClick={() => setActiveSize(s)}
-              >
-                {s}
-              </button>
+        <div className="right-panel" style={{display:'flex', flexDirection:'column'}}>
+          <div style={{display:'grid', gridTemplateColumns:'repeat(3,1fr)'}}>
+            {sizes.map((s) => (
+              <button key={s} className={`stab ${activeSize === s ? "active" : ""}`} onClick={() => setActiveSize(s)}>{s}</button>
             ))}
           </div>
-
-          <div className="pkg-header">
-            <span className="pkg-title">PACKAGE OVERVIEW</span>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2">
-              <line x1="4" y1="6" x2="20" y2="6" /><line x1="8" y1="12" x2="20" y2="12" /><line x1="12" y1="18" x2="20" y2="18" />
-            </svg>
-          </div>
-
-          <div style={{ flex: 1, overflowY: 'auto' }}>
+          <div style={{flex:1, overflowY:'auto'}}>
             <table>
               <thead>
-                <tr>
-                  <th style={{ fontSize: '7px', padding: '8px 16px' }}>ITEM ID</th>
-                  <th style={{ fontSize: '7px', padding: '8px 16px' }}>SIZE</th>
-                  <th style={{ fontSize: '7px', padding: '8px 16px' }}>DESTINATION</th>
-                </tr>
+                <tr><th>ITEM ID</th><th>SIZE</th><th>DESTINATION</th></tr>
               </thead>
               <tbody>
-                {filteredPackages.map((p : any, i : any) => (
-                  <tr key={i}>
-                    <td style={{ padding: '10px 16px' }}><span className="pkg-id">{p.id}</span></td>
-                    <td style={{ padding: '10px 16px' }}>
-                      <div className="size-badge"><div className="size-icon" />{p.size}</div>
-                    </td>
-                    <td style={{ padding: '10px 16px' }}>
-                      <span style={{ fontFamily: "'Rajdhani',sans-serif", fontSize: 12, color: "#9ca3af" }}>{p.dest}</span>
-                    </td>
+                {filteredPackages.map((p) => (
+                  <tr key={p.id}>
+                    <td style={{fontSize:'10px', color:'#6b7280'}}>{p.id}</td>
+                    <td style={{fontSize:'9px', color:'#a855f7'}}>{p.size}</td>
+                    <td style={{fontSize:'12px'}}>{p.dest}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
-
-          <div className="view-all">VIEW ALL SEGMENTS</div>
-
-          <div className="health-section">
-            <div className="health-title">OPERATIONAL HEALTH</div>
-            <div className="health-row"><span className="hk">Bandwidth Efficiency</span><span className="hv">98.2%</span></div>
-            <div className="health-row"><span className="hk">Signal Integrity</span><span className="hv">Normal</span></div>
-            <div className="health-row" style={{ marginBottom: 0 }}><span className="hk">Last Sync</span><span className="hv" style={{ color: "#4b5563" }}>0.02s ago</span></div>
-          </div>
         </div>
       </div>
 
       <div className="footer-bar2">
-        <span className="fb2">● SYSTEM HEALTH: <span>NOMINAL</span></span>
-        <span className="fb2">CONNECTIVITY: <span>ACTIVE</span></span>
-        <span className="fb2">TELEMETRY: <span>SYNCHRONIZED</span></span>
+        <span style={{fontSize:'8px', color:'#4b5563'}}>SYSTEM HEALTH: <span style={{color:'#a855f7'}}>NOMINAL</span></span>
       </div>
     </>
   );

@@ -1,8 +1,8 @@
 "use client";
 import { useState, useEffect, useRef } from "react";
 import PrimeTopbar from "../ui/PrimeTopbar";
-import { fetchVessels, fetchAlerts, fetchFuel, fetchTelemetry } from '@/app/lib/data';
 
+// Icon monitor untuk tabel
 function MonIcon({t}:{t:string}) {
   if(t==="chart") return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>;
   if(t==="anchor") return <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#374151" strokeWidth="2"><circle cx="12" cy="5" r="3"/><line x1="12" y1="8" x2="12" y2="22"/><path d="M5 12H2a10 10 0 0 0 20 0h-3"/></svg>;
@@ -19,22 +19,25 @@ export default function DashboardPage() {
   const [vesselsData, setVesselsData] = useState<any[]>([]);
   const [alertsData, setAlertsData] = useState<any[]>([]);
   const [fuelData, setFuelData] = useState<any[]>([]);
-  const [telemetryData, setTelemetryData] = useState<any>(null); // State baru untuk telemetry
+  const [telemetryData, setTelemetryData] = useState<any>(null);
 
-  // Mengambil data dari Database saat pertama kali render
+  // MENGAMBIL DATA DARI API ROUTE /api/dashboard
   useEffect(() => {
     const loadData = async () => {
       try {
-        const [v, a, f, t] = await Promise.all([
-          fetchVessels(),
-          fetchAlerts(),
-          fetchFuel(),
-          fetchTelemetry() // Memanggil fungsi fetchTelemetry
-        ]);
-        setVesselsData(v);
-        setAlertsData(a);
-        setFuelData(f);
-        setTelemetryData(t);
+        // Mengarahkan fetch ke folder api/dashboard
+        const response = await fetch('/api/dashboard'); 
+        
+        if (!response.ok) throw new Error('Gagal mengambil data dari database');
+        
+        const data = await response.json();
+
+        // Update state dengan data asli dari database
+        setVesselsData(data.vessels || []);
+        setAlertsData(data.alerts || []);
+        setFuelData(data.fuel || []);
+        setTelemetryData(data.telemetry || null);
+        
       } catch (err) {
         console.error("Gagal load data database:", err);
       }
@@ -42,11 +45,18 @@ export default function DashboardPage() {
     loadData();
   }, []);
 
+  // Effect untuk Clock (Sistem Waktu UTC)
   useEffect(() => {
-    const t = () => { const n=new Date(); setUtc(`${String(n.getUTCHours()).padStart(2,"0")}:${String(n.getUTCMinutes()).padStart(2,"0")}:${String(n.getUTCSeconds()).padStart(2,"0")} UTC`); };
-    t(); const id=setInterval(t,1000); return ()=>clearInterval(id);
+    const t = () => { 
+      const n=new Date(); 
+      setUtc(`${String(n.getUTCHours()).padStart(2,"0")}:${String(n.getUTCMinutes()).padStart(2,"0")}:${String(n.getUTCSeconds()).padStart(2,"0")} UTC`); 
+    };
+    t(); 
+    const id=setInterval(t,1000); 
+    return ()=>clearInterval(id);
   }, []);
 
+  // Effect untuk Leaflet Map
   useEffect(() => {
     if (typeof window === "undefined" || leafletMap.current) return;
 
@@ -113,12 +123,10 @@ export default function DashboardPage() {
         .sdot{width:6px;height:6px;border-radius:50%;flex-shrink:0;animation:blink 2s ease-in-out infinite}
         @keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
         .eta{font-family:'Share Tech Mono',monospace;font-size:11px;letter-spacing:0.05em}
-        
         .map-panel{flex:1;min-height:350px}
         .map-outer{display:flex;height:100%;min-height:350px}
         .map-wrap{position:relative; flex:1; background-color:#05050a; overflow: hidden;}
         #map-container { position: absolute; inset: 0; z-index: 1; }
-        
         .map-card{position:absolute;top:14px;left:14px;background:rgba(8,5,22,0.85);border:1px solid rgba(168,85,247,0.45);border-radius:4px;padding:10px 16px;backdrop-filter:blur(8px);z-index:5}
         .map-card-label{font-family:'Share Tech Mono',monospace;font-size:7px;color:#a855f7;letter-spacing:0.28em;margin-bottom:4px}
         .map-card-count{font-family:'Orbitron',sans-serif;font-size:20px;font-weight:700;color:#fff}
@@ -131,14 +139,12 @@ export default function DashboardPage() {
         .tr{display:flex;justify-content:space-between;margin-bottom:8px}
         .tk{font-family:'Share Tech Mono',monospace;font-size:9px;color:#6b7280}
         .tv{font-family:'Share Tech Mono',monospace;font-size:10px;color:#e5e7eb}
-
         .fuel-panel{flex:1; display:flex; flex-direction:column; min-height:200px}
         .fca{flex:1; padding:20px 14px; display:flex; flex-direction:column; justify-content:flex-end}
         .brow{display:flex; align-items:flex-end; gap:8px; height:100px; width:100%}
         .bc{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:flex-end; height:100%}
         .bf{width:100%; border-radius:2px 2px 0 0; transition: height 0.3s ease}
         .bl{margin-top:8px; font-family:'Share Tech Mono',monospace; font-size:7px; color:#4b5563; text-align:center}
-
         .right-col{display:flex;flex-direction:column;gap:10px}
         .ah{display:flex;align-items:center;justify-content:space-between;padding:11px 14px 9px;border-bottom:1px solid rgba(255,255,255,0.06)}
         .at{display:flex;align-items:center;gap:7px;font-family:'Share Tech Mono',monospace;font-size:10px;color:#e5e7eb;letter-spacing:0.18em}

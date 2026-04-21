@@ -3,7 +3,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { TrakingPackages } from './lib/placeholder-data';
 
 // --- KOMPONEN UI ---
 
@@ -75,7 +74,8 @@ const ServiceCard = ({ size, price, desc, details }: any) => (
 
 export default function Page() {
   const [packageId, setPackageId] = useState("");
-  const [activePkg, setActivePkg] = useState<any>(null); // Untuk simpan info paket yang ketemu
+  const [activePkg, setActivePkg] = useState<any>(null);
+  const [isSearching, setIsSearching] = useState(false);
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const leafletMap = useRef<any>(null);
   const currentMarker = useRef<any>(null);
@@ -108,31 +108,47 @@ export default function Page() {
     document.head.appendChild(script);
   }, []);
 
-  // FUNGSI HANDLE LACAK
-  const handleTrack = () => {
-    const found = TrakingPackages.find(p => p.id.toUpperCase() === packageId.toUpperCase());
-    
-    if (found && leafletMap.current) {
-      const L = (window as any).L;
-      setActivePkg(found);
+  // FUNGSI HANDLE LACAK (SINKRON DENGAN DATABASE)
+  const handleTrack = async () => {
+    if (!packageId.trim()) return;
+    setIsSearching(true);
 
-      // Geser peta ke koordinat kapal
-      leafletMap.current.flyTo([found.lat, found.lng], 7, { animate: true, duration: 2 });
+    try {
+      // Kita panggil API query untuk mencari data kapal berdasarkan ID Paket
+      const response = await fetch(`/api/companyprofil?id=${packageId.toUpperCase()}`, {
+          headers: {
+            'Accept': 'application/json',
+          },
+        });
+      const data = await response.json();
 
-      // Hapus marker lama jika ada
-      if (currentMarker.current) currentMarker.current.remove();
+      if (response.ok && data.vessels && data.vessels.length > 0) {
+        const found = data.vessels[0];
+        const L = (window as any).L;
+        setActivePkg(found);
 
-      const pulseIcon = L.divIcon({
-        className: 'map-pulse-icon',
-        html: `<div style="width:12px; height:12px; background:#22d3ee; border-radius:50%; box-shadow:0 0 15px #22d3ee; animation: blink 1.5s infinite"></div>`,
-        iconSize: [12, 12]
-      });
+        // Geser peta ke koordinat hasil database
+        leafletMap.current.flyTo([found.lat, found.lng], 7, { animate: true, duration: 2 });
 
-      // Tambah marker baru
-      currentMarker.current = L.marker([found.lat, found.lng], { icon: pulseIcon }).addTo(leafletMap.current);
-      currentMarker.current.bindPopup(`<b style="color:black">${found.vesselName}</b><br/><span style="color:gray">Dest: ${found.dest}</span>`).openPopup();
-    } else {
-      alert("ID Paket tidak ditemukan!");
+        if (currentMarker.current) currentMarker.current.remove();
+
+        const pulseIcon = L.divIcon({
+          className: 'map-pulse-icon',
+          html: `<div style="width:12px; height:12px; background:#22d3ee; border-radius:50%; box-shadow:0 0 15px #22d3ee; animation: blink 1.5s infinite"></div>`,
+          iconSize: [12, 12]
+        });
+
+        currentMarker.current = L.marker([found.lat, found.lng], { icon: pulseIcon }).addTo(leafletMap.current);
+        currentMarker.current.bindPopup(`<b style="color:black">${found.name}</b><br/><span style="color:gray">Status: ${found.status}</span>`).openPopup();
+      } else {
+        alert("ID Paket tidak terdaftar di sistem kami.");
+        setActivePkg(null);
+      }
+    } catch (error) {
+      console.error("Tracing error:", error);
+      alert("Gagal menghubungi satelit (Database error).");
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -241,17 +257,18 @@ export default function Page() {
                   type="text" 
                   value={packageId}
                   onChange={(e) => setPackageId(e.target.value)}
-                  placeholder="Contoh: PKG-100293"
+                  onKeyDown={(e) => e.key === 'Enter' && handleTrack()}
+                  placeholder="Masukkan ID Kapal/Paket..."
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-6 py-5 text-xl font-mono focus:outline-none focus:border-purple-500 transition-all placeholder:text-gray-600 uppercase"
                 />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 bg-cyan-500 rounded-full animate-ping"></div>
               </div>
               
               <button 
                 onClick={handleTrack}
-                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-black py-5 rounded-xl uppercase tracking-[0.2em] transition-all transform hover:scale-[1.02] active:scale-[0.98]"
+                disabled={isSearching}
+                className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-black py-5 rounded-xl uppercase tracking-[0.2em] transition-all transform hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50"
               >
-                Lacak Sekarang
+                {isSearching ? "Mencari Kapal..." : "Lacak Sekarang"}
               </button>
             </div>
           </div>
@@ -259,7 +276,6 @@ export default function Page() {
           <div className="relative group min-h-[400px]">
             <div className="absolute -inset-1 bg-gradient-to-r from-cyan-500/20 to-purple-500/20 rounded-3xl blur opacity-75 group-hover:opacity-100 transition duration-1000"></div>
             <div className="relative h-full w-full bg-[#030712] border border-white/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
-              
               <div className="p-4 border-b border-white/10 bg-white/5 flex justify-between items-center z-[1000]">
                 <span className="text-[10px] font-black uppercase tracking-widest text-cyan-400 flex items-center gap-2">
                   <span className="w-1.5 h-1.5 bg-cyan-500 rounded-full animate-pulse"></span> SATELLITE FEED: ACTIVE
@@ -277,15 +293,15 @@ export default function Page() {
               <div className="p-6 bg-gradient-to-t from-black to-transparent z-[1000]">
                 <div className="flex justify-between items-end">
                   <div>
-                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Current Vessel</div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Target Name</div>
                     <div className="text-lg font-bold italic uppercase text-cyan-400">
-                      {activePkg ? activePkg.vesselName : "Awaiting Track..."}
+                      {activePkg ? activePkg.name : "Awaiting Track..."}
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Destination</div>
+                    <div className="text-[10px] text-gray-500 uppercase tracking-widest mb-1">Status</div>
                     <div className="text-lg font-bold text-white uppercase tracking-tighter">
-                      {activePkg ? activePkg.dest : "---"}
+                      {activePkg ? activePkg.status : "---"}
                     </div>
                   </div>
                 </div>
