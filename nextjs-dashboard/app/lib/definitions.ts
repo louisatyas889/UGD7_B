@@ -29,3 +29,18 @@ export type Revenue = {
   month: string;
   revenue: number;
 };
+
+export interface CustomersTableType {
+  id: string;
+  name: string;
+  email: string;
+  image_url: string;
+  total_invoices: number;
+  total_pending: number;
+  total_paid: number;
+};
+
+export interface FormattedCustomersTable extends CustomersTableType {
+  // Jika ada tambahan format khusus, tambahkan di sini, 
+  // tapi biasanya ini sudah cukup untuk table.tsx
+}
