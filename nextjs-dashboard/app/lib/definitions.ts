@@ -23,3 +23,9 @@ export interface Fuel {
   h: number;
   l: string;
 }
+
+// Pastikan ada kata 'export' di depannya
+export type Revenue = {
+  month: string;
+  revenue: number;
+};
